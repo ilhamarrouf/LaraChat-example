@@ -8,9 +8,16 @@
 require('./bootstrap');
 
 window.Vue = require('vue');
+
+// for autoscroll
 import Vue from 'vue'
 import VueChatScroll from 'vue-chat-scroll'
 Vue.use(VueChatScroll)
+
+// for notifications
+import Toaster from 'v-toaster'
+import 'v-toaster/dist/v-toaster.css'
+Vue.use(Toaster, {timeout: 5000})
 
 /**
  * Next, we will create a fresh Vue application instance and attach it to
@@ -30,7 +37,8 @@ const app = new Vue({
             color: [],
             time: []
         },
-        typing: ''
+        typing: '',
+        numberOfUsers: 0
     },
     watch: {
         message() {
@@ -51,7 +59,6 @@ const app = new Vue({
                     message : this.message
                 })
                 .then(response => {
-                    console.log(response);
                     this.message = ''
                 })
                 .catch(error => {
@@ -72,7 +79,6 @@ const app = new Vue({
                 this.chat.user.push(e.user);
                 this.chat.color.push('warning');
                 this.chat.time.push(this.getTime());
-                // console.log(e);
             })
             .listenForWhisper('typing', (e) => {
                 if (e.name != '') {
@@ -80,6 +86,18 @@ const app = new Vue({
                 } else {
                     this.typing = '';
                 }
+            });
+        Echo.join(`chat`)
+            .here((users) => {
+                this.numberOfUsers = users.length;
+            })
+            .joining((user) => {
+                this.numberOfUsers += 1;
+                this.$toaster.success(user.name+' is joined the chat room');
+            })
+            .leaving((user) => {
+                this.numberOfUsers -= 1;
+                this.$toaster.warning(user.name+' is leaved the chat room');
             });
     }
 });
